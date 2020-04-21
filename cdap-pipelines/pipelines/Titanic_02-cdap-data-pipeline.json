@@ -1,0 +1,190 @@
+{
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "scope": "SYSTEM",
+        "version": "6.1.1"
+    },
+    "config": {
+        "comments": [],
+        "connections": [
+            {
+                "from": "CSV Input",
+                "to": "Parse CSV"
+            },
+            {
+                "from": "Parse CSV",
+                "to": "Valid Records"
+            },
+            {
+                "from": "Parse CSV",
+                "to": "ErrorCollector"
+            },
+            {
+                "from": "ErrorCollector",
+                "to": "Bad Records"
+            }
+        ],
+        "description": "Takes input from a CSV file and parses it out into separate fields. Applies data validation and diverts all record to a new dataset via the error collector.\nAdded ${input.path} and ${output.path} macros to make the paths portable.",
+        "driverResources": {
+            "memoryMB": 2048.0,
+            "virtualCores": 1.0
+        },
+        "engine": "spark",
+        "maxConcurrentRuns": 1.0,
+        "numOfRecordsPreview": 100.0,
+        "postActions": [],
+        "processTimingEnabled": true,
+        "properties": {},
+        "resources": {
+            "memoryMB": 2048.0,
+            "virtualCores": 1.0
+        },
+        "schedule": "0 * * * *",
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "CSV Input",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "core-plugins",
+                        "scope": "SYSTEM",
+                        "version": "2.3.4"
+                    },
+                    "label": "CSV Input",
+                    "name": "File",
+                    "properties": {
+                        "copyHeader": "false",
+                        "filenameOnly": "false",
+                        "format": "text",
+                        "ignoreNonExistingFolders": "false",
+                        "path": "${input.path}/data/titanic.csv",
+                        "recursive": "false",
+                        "referenceName": "titanic.csv",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    },
+                    "type": "batchsource"
+                }
+            },
+            {
+                "inputSchema": [
+                    {
+                        "name": "File",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "name": "Parse CSV",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"PassengerId\",\"type\":[\"string\",\"null\"]},{\"name\":\"Survived\",\"type\":[\"string\",\"null\"]},{\"name\":\"Pclass\",\"type\":[\"string\",\"null\"]},{\"name\":\"Name\",\"type\":[\"string\",\"null\"]},{\"name\":\"Sex\",\"type\":[\"string\",\"null\"]},{\"name\":\"Age\",\"type\":[\"int\",\"null\"]},{\"name\":\"SibSp\",\"type\":[\"string\",\"null\"]},{\"name\":\"Parch\",\"type\":[\"string\",\"null\"]},{\"name\":\"Ticket\",\"type\":[\"string\",\"null\"]},{\"name\":\"Fare\",\"type\":[\"string\",\"null\"]},{\"name\":\"Cabin\",\"type\":[\"string\",\"null\"]},{\"name\":\"Embarked\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "wrangler-transform",
+                        "scope": "SYSTEM",
+                        "version": "4.1.4"
+                    },
+                    "label": "Parse CSV",
+                    "name": "Wrangler",
+                    "properties": {
+                        "directives": "parse-as-csv :body ',' true\ndrop body\nsend-to-error empty(Age)\nfill-null-or-empty :Cabin 'unassigned'\nsend-to-error !dq:isNumber(Age)\nsend-to-error !dq:isInteger(Age)\nset-type :Age integer",
+                        "field": "body",
+                        "precondition": "false",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"PassengerId\",\"type\":[\"string\",\"null\"]},{\"name\":\"Survived\",\"type\":[\"string\",\"null\"]},{\"name\":\"Pclass\",\"type\":[\"string\",\"null\"]},{\"name\":\"Name\",\"type\":[\"string\",\"null\"]},{\"name\":\"Sex\",\"type\":[\"string\",\"null\"]},{\"name\":\"Age\",\"type\":[\"int\",\"null\"]},{\"name\":\"SibSp\",\"type\":[\"string\",\"null\"]},{\"name\":\"Parch\",\"type\":[\"string\",\"null\"]},{\"name\":\"Ticket\",\"type\":[\"string\",\"null\"]},{\"name\":\"Fare\",\"type\":[\"string\",\"null\"]},{\"name\":\"Cabin\",\"type\":[\"string\",\"null\"]},{\"name\":\"Embarked\",\"type\":[\"string\",\"null\"]}]}",
+                        "threshold": "1",
+                        "workspaceId": "8398c327-2cbf-4280-b703-b7064d8f0469"
+                    },
+                    "type": "transform"
+                }
+            },
+            {
+                "inputSchema": [
+                    {
+                        "name": "Wrangler",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"PassengerId\",\"type\":[\"string\",\"null\"]},{\"name\":\"Survived\",\"type\":[\"string\",\"null\"]},{\"name\":\"Pclass\",\"type\":[\"string\",\"null\"]},{\"name\":\"Name\",\"type\":[\"string\",\"null\"]},{\"name\":\"Sex\",\"type\":[\"string\",\"null\"]},{\"name\":\"Age\",\"type\":[\"int\",\"null\"]},{\"name\":\"SibSp\",\"type\":[\"string\",\"null\"]},{\"name\":\"Parch\",\"type\":[\"string\",\"null\"]},{\"name\":\"Ticket\",\"type\":[\"string\",\"null\"]},{\"name\":\"Fare\",\"type\":[\"string\",\"null\"]},{\"name\":\"Cabin\",\"type\":[\"string\",\"null\"]},{\"name\":\"Embarked\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "name": "Valid Records",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"body\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "core-plugins",
+                        "scope": "SYSTEM",
+                        "version": "2.3.4"
+                    },
+                    "label": "Valid Records",
+                    "name": "SnapshotText",
+                    "properties": {
+                        "basePath": "${output.path}/tests/output",
+                        "delimiter": ",",
+                        "name": "titanic_csv"
+                    },
+                    "type": "batchsink"
+                }
+            },
+            {
+                "name": "ErrorCollector",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "core-plugins",
+                        "scope": "SYSTEM",
+                        "version": "2.3.4"
+                    },
+                    "label": "ErrorCollector",
+                    "name": "ErrorCollector",
+                    "properties": {},
+                    "type": "errortransform"
+                }
+            },
+            {
+                "inputSchema": [
+                    {
+                        "name": "ErrorCollector",
+                        "schema": ""
+                    }
+                ],
+                "name": "Bad Records",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": ""
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "core-plugins",
+                        "scope": "SYSTEM",
+                        "version": "2.3.4"
+                    },
+                    "label": "Bad Records",
+                    "name": "SnapshotText",
+                    "properties": {
+                        "basePath": "${output.path}/tests/errors",
+                        "delimiter": ",",
+                        "name": "titanic_errors"
+                    },
+                    "type": "batchsink"
+                }
+            }
+        ]
+    },
+    "description": "Takes input from a CSV file and parses it out into separate fields. Applies data validation and diverts all record to a new dataset via the error collector.\nAdded ${input.path} and ${output.path} macros to make the paths portable.",
+    "name": "Titanic_02"
+}

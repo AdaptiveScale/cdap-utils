@@ -1,0 +1,140 @@
+{
+    "name": "Titanic_01",
+    "description": "Takes input from a CSV file and writes it straight out to a Snapshot Text file (again in CSV format) without any transformation whatsoever.",
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.1.1",
+        "scope": "SYSTEM"
+    },
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "File",
+                "to": "Wrangler"
+            },
+            {
+                "from": "Wrangler",
+                "to": "SnapshotText"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "File",
+                "plugin": {
+                    "name": "File",
+                    "type": "batchsource",
+                    "label": "File",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "2.3.4",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "copyHeader": "false",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}",
+                        "path": "file:/Users/veton/code/misc/cdap_blog/cdap-pipelines/data/titanic.csv",
+                        "format": "text",
+                        "ignoreNonExistingFolders": "false",
+                        "recursive": "false",
+                        "referenceName": "titanic.csv"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsource",
+                "label": "File",
+                "icon": "icon-file"
+            },
+            {
+                "name": "Wrangler",
+                "plugin": {
+                    "name": "Wrangler",
+                    "type": "transform",
+                    "label": "Wrangler",
+                    "artifact": {
+                        "name": "wrangler-transform",
+                        "version": "4.1.4",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "field": "body",
+                        "precondition": "false",
+                        "threshold": "1",
+                        "workspaceId": "8398c327-2cbf-4280-b703-b7064d8f0469",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "File",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "transform",
+                "label": "Wrangler",
+                "icon": "icon-DataPreparation"
+            },
+            {
+                "name": "SnapshotText",
+                "plugin": {
+                    "name": "SnapshotText",
+                    "type": "batchsink",
+                    "label": "SnapshotText",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "2.3.4",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "name": "titanic_csv",
+                        "delimiter": ",",
+                        "basePath": "/Users/veton/code/misc/cdap_blog/cdap-pipelines/tests/output"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"body\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "Wrangler",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "type": "batchsink",
+                "label": "SnapshotText",
+                "icon": "icon-SnapshotTextSink"
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "spark",
+        "numOfRecordsPreview": 100,
+        "description": "Takes input from a CSV file and writes it straight out to a Snapshot Text file (again in CSV format) without any transformation whatsoever.",
+        "maxConcurrentRuns": 1
+    }
+}
