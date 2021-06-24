@@ -4,7 +4,7 @@ import asyncio
 from os import environ
 import click
 import time
-import pydash
+from CDFApi import CDFApi
 
 loop = asyncio.get_event_loop()
 running_pipeline = {}
@@ -50,9 +50,9 @@ async def check_and_execute(cdf_api, istance_pipelines, pipelines_json_file, out
     return await asyncio.gather(*tasks, return_exceptions=True)
 
 
-async def check_and_execute_sequence(cdf_api, istance_pipelines, pipelines_json_file, output_file, sequence):
+async def check_and_execute_sequence(cdf_api, instance_pipelines, pipelines_json_file, output_file, sequence):
     tasks = []
-    for pipeline in istance_pipelines:
+    for pipeline in instance_pipelines:
         if pipeline['name'] in pipelines_json_file['pipelines']:
             macros = pipelines_json_file.get('pipelines').get(pipeline['name'])[0] if len(
                 pipelines_json_file.get('pipelines').get(pipeline['name'])) > 0 else None
@@ -78,55 +78,6 @@ async def start_and_wait_to_stop(cdf_api, pipeline, macros, output_file):
                           " failed to start." + "\n")
 
     await check_status(cdf_api, pipeline, output_file)
-
-
-class CDFApi:
-    token = None
-    api_endpoint = None
-    headers = None
-    namespace = 'default'
-    status_url = '/status'
-    namespaces_url = '/v3/namespaces'
-    version_url = '/v3/version'
-    drafts_url = '/v3/configuration/user'
-
-    def __init__(self, auth_token, api_endpoint, namespace):
-        self.api_endpoint = api_endpoint
-        self.token = auth_token
-        self.namespace = namespace
-        if auth_token is not None:
-            self.headers = {"Authorization": "Bearer " + self.token}
-
-    def check_status(self):
-        return requests.get(self.api_endpoint + self.status_url, allow_redirects=True, headers=self.headers)
-
-    def get_individual_namespace(self):
-        return requests.get(self.api_endpoint + self.namespaces_url + "/" + self.namespace, allow_redirects=True,
-                            headers=self.headers).json()
-
-    def get_deployed_pipelines(self):
-        return requests.get(self.api_endpoint + self.namespaces_url + "/" + self.namespace + "/apps",
-                            headers=self.headers).json()
-
-    def get_individual_deployed_pipeline(self, name):
-        return requests.get(self.api_endpoint + self.namespaces_url + "/" + self.namespace + "/apps/" + name,
-                            headers=self.headers).json()
-
-    async def start_pipeline(self, pipeline_name, program_type, program_id, macros):
-        if self.headers != None:
-            self.headers.update({'Content-Type': 'application/json'})
-        else:
-            self.headers = {'Content-Type': 'application/json'}
-        response = requests.post(self.api_endpoint + self.namespaces_url + "/" + self.namespace + "/apps/" +
-                                 pipeline_name + "/" + program_type + "/" + program_id + "/start", headers=self.headers)
-        tm = time.strftime('%a, %d %b %Y %H:%M:%S %Z(%z)')
-        return {"pipeline_name": pipeline_name, "program_type": program_type, "program_id": program_id,
-                "status": response.status_code, "time_stamp": tm}
-
-    def check_pipeline_status(self, pipeline_name, program_type, program_id):
-        return requests.get(
-            self.api_endpoint + self.namespaces_url + "/" + self.namespace + "/apps/" + pipeline_name + "/" + program_type + "/" + program_id + "/status",
-            headers=self.headers).json()
 
 
 def pipelines_datas(cdf_api, all_deployed_pipelines):
