@@ -1,0 +1,4 @@
+click
+urllib
+requests
+pyinstaller
